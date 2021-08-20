@@ -1,7 +1,7 @@
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
-from paddleseg.models.backbones.resnet_vd import ResNet101_vd
+from paddleseg.models.backbones.resnet_vd import ResNet_vd
 import numpy as np
 
 
@@ -94,12 +94,12 @@ class AggregationModule(nn.Layer):
 
 
 class CPNet(nn.Layer):
-    def __init__(self, prior_channels, proir_size, am_kernel_size, pretrained=0, groups=1, ):
+    def __init__(self, prior_channels, proir_size, am_kernel_size, pretrained=None, groups=1, ):
         super().__init__()
         
         self.in_channels = 2048
         self.channels = 512
-        self.backbone = ResNet101_vd(pretrained)
+        self.backbone = ResNet_vd(101, pretrained=pretrained)
         
         self.prior_channels = prior_channels
         self.prior_size = [proir_size, proir_size]
