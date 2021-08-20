@@ -36,8 +36,8 @@ except:
 
 # cityscapes imports
 sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'helpers')))
-from helpers.annotation import Annotation
-from labels import name2label
+from ..helpers.annotation import Annotation
+from ..helpers.labels import name2label
 
 
 # Print the information
