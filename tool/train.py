@@ -115,7 +115,7 @@ def train(model,
         train_dataset,
         batch_sampler=batch_sampler,
         num_workers=num_workers,
-        use_shared_memory=True,  # use_shared_memory=False for AIStudio
+        use_shared_memory=False,  # use_shared_memory=False for AIStudio
         return_list=True,
         worker_init_fn=worker_init_fn,
     )

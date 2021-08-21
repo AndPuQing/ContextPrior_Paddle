@@ -98,11 +98,11 @@ class AggregationModule(nn.Layer):
 class CPNet(nn.Layer):
     def __init__(self, prior_channels, proir_size, am_kernel_size, pretrained=None, groups=1, ):
         super().__init__()
-    
+
         self.in_channels = 2048
         self.channels = 256
         self.backbone = ResNet_vd(101, pretrained=pretrained, output_stride=16)
-    
+
         self.prior_channels = prior_channels
         self.prior_size = [proir_size, proir_size]
         self.aggregation = AggregationModule(self.in_channels, prior_channels,
@@ -135,6 +135,10 @@ class CPNet(nn.Layer):
         # inputs B H w C_0
         H = inputs.shape[2]
         W = inputs.shape[3]
+        if H != 768 or W != 768:
+            inputs = F.interpolate(inputs, (768, 768),
+                                   mode='bilinear',
+                                   align_corners=True)
         conv1, conv2, conv3, conv4 = self.backbone(inputs)
         batch_size, channels, height, width = conv4.shape
         assert self.prior_size[0] == height and self.prior_size[1] == width
@@ -183,7 +187,8 @@ class CPNet(nn.Layer):
         output = F.interpolate(output, (H, W),
                                mode='bilinear',
                                align_corners=True)
-        return output, context_prior_map
+        output_1 = F.interpolate(conv4, (H, W), mode='bilinear', align_mode=True)
+        return output, output_1, context_prior_map
 
 
 model = CPNet(proir_size=48, am_kernel_size=11, groups=1, prior_channels=256)

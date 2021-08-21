@@ -53,9 +53,9 @@ class AffinityLoss(nn.Layer):
         
         diagonal_matrix = (1 - paddle.eye(ideal_affinity_matrix.shape[1]))
         vtarget = diagonal_matrix * ideal_affinity_matrix
-        
         recall_part = paddle.sum(cls_score * vtarget.squeeze(), axis=2)
         denominator = paddle.sum(ideal_affinity_matrix, axis=2)
+        denominator = paddle.where(denominator <= 0, paddle.ones_like(denominator), denominator)
         # recall_part = recall_part / denominator
         recall_part = paddle.divide(recall_part, denominator)
         recall_label = paddle.ones_like(recall_part)
@@ -66,6 +66,7 @@ class AffinityLoss(nn.Layer):
         
         spec_part = paddle.sum((1 - cls_score) * (1 - ideal_affinity_matrix), axis=2)
         denominator = paddle.sum(1 - ideal_affinity_matrix, axis=2)
+        denominator = paddle.where(denominator <= 0, paddle.ones_like(denominator), denominator)
         spec_part = paddle.divide(spec_part, denominator)
         spec_label = paddle.ones_like(spec_part)
         spec_loss = F.binary_cross_entropy(spec_part, spec_label)
@@ -73,6 +74,7 @@ class AffinityLoss(nn.Layer):
         
         precision_part = paddle.sum(cls_score * ideal_affinity_matrix, axis=2)
         denominator = paddle.sum(cls_score, axis=2)
+        denominator = paddle.where(denominator <= 0, paddle.ones_like(denominator), denominator)
         precision_part = paddle.divide(precision_part, denominator)
         precision_label = paddle.ones_like(precision_part)
         precision_loss = F.binary_cross_entropy(precision_part, precision_label)

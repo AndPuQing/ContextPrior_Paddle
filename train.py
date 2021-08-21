@@ -3,12 +3,12 @@ from models.model_stages import CPNet
 import paddleseg.transforms as T
 from paddleseg.datasets import Cityscapes
 from paddle.optimizer.lr import PolynomialDecay
-from paddleseg.models.losses import OhemCrossEntropyLoss
+from paddleseg.models.losses import CrossEntropyLoss
 from loss.affinityloss import AffinityLoss
 from tool.train import train
 
 backbonepath = None
-model = CPNet(proir_size=96, am_kernel_size=11, groups=1, prior_channels=512, pretrained=backbonepath)
+model = CPNet(proir_size=96, am_kernel_size=11, groups=1, prior_channels=256, pretrained=backbonepath)
 
 transform = [
     T.ResizeStepScaling(0.5, 2.0, 0.25),
@@ -49,10 +49,11 @@ optimizer = paddle.optimizer.Momentum(lr,
 losses = {}
 
 losses['types'] = [
-    OhemCrossEntropyLoss(),
+    CrossEntropyLoss(),
+    CrossEntropyLoss(),
     AffinityLoss()
 ]
-losses['coef'] = [1, 0.4]
+losses['coef'] = [1, 1, 0.4]
 
 if __name__ == '__main__':
     train(
