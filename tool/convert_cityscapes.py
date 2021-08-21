@@ -34,7 +34,7 @@ import argparse
 from multiprocessing import Pool, cpu_count
 import glob
 
-from ..work.cityscapesscripts.preparation.json2labelImg import json2labelImg
+from cityscapesscripts.preparation.json2labelImg import json2labelImg
 
 
 def parse_args():

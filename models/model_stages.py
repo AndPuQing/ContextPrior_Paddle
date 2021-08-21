@@ -14,17 +14,19 @@ class ConvModule(nn.Layer):
                  padding=0,
                  groups=1):
         super().__init__()
-        self.ConvBNRelu = nn.Sequential(
-            nn.Conv2D(
-                in_channels,
-                out_channels,
-                kernel_size,
-                stride,
-                padding,
-                groups=groups), nn.BatchNorm2D(out_channels), nn.ReLU())
+        self.conv = nn.Conv2D(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            groups=groups
+        )
+        self.bn = nn.BatchNorm2D(out_channels)
+        self.re = nn.ReLU()
     
     def forward(self, x):
-        return self.ConvBNRelu(x)
+        return self.re(self.bn(self.conv(x)))
 
 
 class AggregationModule(nn.Layer):
@@ -96,11 +98,11 @@ class AggregationModule(nn.Layer):
 class CPNet(nn.Layer):
     def __init__(self, prior_channels, proir_size, am_kernel_size, pretrained=None, groups=1, ):
         super().__init__()
-        
+    
         self.in_channels = 2048
-        self.channels = 512
-        self.backbone = ResNet_vd(101, pretrained=pretrained)
-        
+        self.channels = 256
+        self.backbone = ResNet_vd(101, pretrained=pretrained, output_stride=16)
+    
         self.prior_channels = prior_channels
         self.prior_size = [proir_size, proir_size]
         self.aggregation = AggregationModule(self.in_channels, prior_channels,
@@ -131,13 +133,15 @@ class CPNet(nn.Layer):
     
     def forward(self, inputs):
         # inputs B H w C_0
+        H = inputs.shape[2]
+        W = inputs.shape[3]
         conv1, conv2, conv3, conv4 = self.backbone(inputs)
         batch_size, channels, height, width = conv4.shape
         assert self.prior_size[0] == height and self.prior_size[1] == width
-        
+    
         # B H w C
         value = self.aggregation(conv4)
-        
+    
         # B H W (H*W)
         context_prior_map = self.prior_conv(value)
         
@@ -165,7 +169,7 @@ class CPNet(nn.Layer):
                                                self.prior_size[0],
                                                self.prior_size[1]))
         intra_context = self.intra_conv(intra_context)
-        
+    
         inter_context = paddle.bmm(inter_context_prior_map, value)
         inter_context = inter_context / np.prod(self.prior_size)
         inter_context = inter_context.transpose((0, 2, 1))
@@ -173,11 +177,27 @@ class CPNet(nn.Layer):
                                                self.prior_size[0],
                                                self.prior_size[1]))
         inter_context = self.inter_conv(inter_context)
-        
+    
         cp_outs = paddle.concat([conv4, intra_context, inter_context], axis=1)
         output = self.bottleneck(cp_outs)
-        
+        output = F.interpolate(output, (H, W),
+                               mode='bilinear',
+                               align_corners=True)
         return output, context_prior_map
 
 
-model = CPNet(proir_size=96, am_kernel_size=11, groups=1, prior_channels=512)
+model = CPNet(proir_size=48, am_kernel_size=11, groups=1, prior_channels=256)
+
+
+# ap = paddle.rand([1, 3, 768, 768])
+# out, _ = model(ap)
+# print(out)
+def count_syncbn(m, x, y):
+    x = x[0]
+    nelements = x.numel()
+    m.total_ops += int(2 * nelements)
+
+
+flops = paddle.flops(
+    model, [1, 3, 768, 768],
+    custom_ops={paddle.nn: count_syncbn}, print_detail=True)
