@@ -3,7 +3,7 @@ from models.model_stages import CPNet
 import paddleseg.transforms as T
 from paddleseg.datasets import Cityscapes
 from paddle.optimizer.lr import PolynomialDecay
-from paddleseg.models.losses import CrossEntropyLoss
+from paddleseg.models.losses import CrossEntropyLoss, OhemCrossEntropyLoss
 from loss.affinityloss import AffinityLoss
 from tool.train import train
 
@@ -32,7 +32,7 @@ val_dataset = Cityscapes(
     mode='val'
 )
 
-base_lr = 0.01
+base_lr = 0.001
 
 lr = PolynomialDecay(
     learning_rate=base_lr,
@@ -49,11 +49,11 @@ optimizer = paddle.optimizer.Momentum(lr,
 losses = {}
 
 losses['types'] = [
-    CrossEntropyLoss(),
+    OhemCrossEntropyLoss(),
     CrossEntropyLoss(),
     AffinityLoss()
 ]
-losses['coef'] = [1, 1, 0.4]
+losses['coef'] = [1, 0.4, 1]
 
 if __name__ == '__main__':
     train(

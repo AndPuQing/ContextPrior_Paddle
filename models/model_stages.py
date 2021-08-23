@@ -123,20 +123,27 @@ class CPNet(nn.Layer):
             padding=0,
             stride=1,
         )
-        
+
         self.bottleneck = ConvModule(
             self.in_channels + self.prior_channels * 2,
             self.channels,
             3,
             padding=1,
         )
+        self.aux = nn.Sequential(
+            nn.Conv2D(2048, 256, kernel_size=3, padding=1, bias_attr=False),
+            nn.BatchNorm2D(256),
+            nn.ReLU(),
+            nn.Dropout2D(p=0.1),
+            nn.Conv2D(256, 19, kernel_size=1)
+        )
     
     def forward(self, inputs):
         # inputs B H w C_0
         H = inputs.shape[2]
         W = inputs.shape[3]
-        if H != 768 or W != 768:
-            inputs = F.interpolate(inputs, (768, 768),
+        if H != 576 or W != 576:
+            inputs = F.interpolate(inputs, (576, 576),
                                    mode='bilinear',
                                    align_corners=True)
         conv1, conv2, conv3, conv4 = self.backbone(inputs)
@@ -187,22 +194,23 @@ class CPNet(nn.Layer):
         output = F.interpolate(output, (H, W),
                                mode='bilinear',
                                align_corners=True)
-        output_1 = F.interpolate(conv4, (H, W), mode='bilinear', align_mode=True)
-        return output, output_1, context_prior_map
+        aux = self.aux(conv4)
+        aux = F.interpolate(aux, size=(H, W), mode='bilinear', align_corners=True)
+        return output, aux, context_prior_map
 
 
-model = CPNet(proir_size=48, am_kernel_size=11, groups=1, prior_channels=256)
+model = CPNet(proir_size=36, am_kernel_size=11, groups=1, prior_channels=256)
 
-
-# ap = paddle.rand([1, 3, 768, 768])
-# out, _ = model(ap)
-# print(out)
-def count_syncbn(m, x, y):
-    x = x[0]
-    nelements = x.numel()
-    m.total_ops += int(2 * nelements)
-
-
-flops = paddle.flops(
-    model, [1, 3, 768, 768],
-    custom_ops={paddle.nn: count_syncbn}, print_detail=True)
+ap = paddle.rand([1, 3, 768, 768])
+out, conv4, _ = model(ap)
+print(out.shape)
+print(conv4.shape)
+# def count_syncbn(m, x, y):
+#     x = x[0]
+#     nelements = x.numel()
+#     m.total_ops += int(2 * nelements)
+#
+#
+# flops = paddle.flops(
+#     model, [1, 3, 576, 576],
+#     custom_ops={paddle.nn: count_syncbn}, print_detail=True)
