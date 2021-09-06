@@ -77,3 +77,28 @@ python eval.py
 ├── train.py # 训练
 ├── eval.py # 评估
 ```
+
+### 七、Aistudio
+
+[快速开始在AiStudio上训练验证](https://aistudio.baidu.com/aistudio/projectdetail/2344133?contributionType=1&shared=1)
+
+1. 安装依赖
+
+```bash
+!pip install paddleseg --user
+```
+
+2. 训练
+
+```bash
+%cd /home/aistudio/work/openContext/
+!python train.py
+```
+
+3. 验证
+
+```bash
+%cd /home/aistudio/work/openContext/
+!python eva.py
+```
+
