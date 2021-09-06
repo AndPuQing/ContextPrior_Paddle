@@ -13,12 +13,14 @@ ContextPrior Architecture
 本项目利用百度的paddlepaddle框架对CVPR2020论文context prior for scene
 segmentation的复现。项目依赖于paddleseg工具，因此可以使用paddleseg中提供的训练和评估API进行训练与评估。
 
-### 二、复现精度
+### 二、复现精度及loss图
+
+![img.png](img.png)
 
 | Model                | mIOU  |
 | -------------------- | ----- |
 | CPNet50(原论文mmseg) | 44.46 |
-| CPNet50              | 45.78  |
+| CPNet50              | 45.37  |
 
 ### 三、数据集
 
