@@ -75,11 +75,11 @@ class AggregationModule(nn.Layer):
 class CPNet(nn.Layer):
     def __init__(self, prior_channels, proir_size, am_kernel_size, pretrained=None, groups=1, ):
         super().__init__()
-    
+
         self.in_channels = 2048
         self.channels = 256
         self.backbone = ResNet_vd(50, pretrained=pretrained)
-    
+
         self.prior_channels = prior_channels
         self.prior_size = paddle.to_tensor([proir_size, proir_size])
         self.aggregation = AggregationModule(self.in_channels, prior_channels,
@@ -100,13 +100,14 @@ class CPNet(nn.Layer):
             padding=0,
             stride=1,
         )
-    
+
         self.bottleneck = ConvBNReLU(
             self.in_channels + self.prior_channels * 2,
             self.channels,
             3,
             padding=1,
         )
+        # aux辅助函数 !!!out_channels设置为种类数
         self.aux = AuxLayer(
             in_channels=self.in_channels,
             out_channels=150, inter_channels=self.channels)
@@ -122,10 +123,10 @@ class CPNet(nn.Layer):
         conv1, conv2, conv3, conv4 = self.backbone(inputs)
         batch_size, channels, height, width = conv4.shape
         assert self.prior_size[0] == height and self.prior_size[1] == width
-    
+
         # B H w C
         value = self.aggregation(conv4)
-    
+
         # B H W (H*W)
         context_prior_map = self.prior_conv(value)
         
@@ -142,7 +143,7 @@ class CPNet(nn.Layer):
         value = paddle.transpose(value, (0, 2, 1))
         
         intra_context = paddle.bmm(context_prior_map, value)
-    
+
         intra_context = intra_context / paddle.prod(self.prior_size)
         
         intra_context = intra_context.transpose((0, 2, 1))
@@ -150,7 +151,7 @@ class CPNet(nn.Layer):
                                                self.prior_size[0],
                                                self.prior_size[1]))
         intra_context = self.intra_conv(intra_context)
-    
+
         inter_context = paddle.bmm(inter_context_prior_map, value)
         inter_context = inter_context / paddle.prod(self.prior_size)
         inter_context = inter_context.transpose((0, 2, 1))
@@ -158,7 +159,7 @@ class CPNet(nn.Layer):
                                                self.prior_size[0],
                                                self.prior_size[1]))
         inter_context = self.inter_conv(inter_context)
-    
+
         cp_outs = paddle.concat([conv4, intra_context, inter_context], axis=1)
         output = self.bottleneck(cp_outs)
         output = F.interpolate(output, (H, W),

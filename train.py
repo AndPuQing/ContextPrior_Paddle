@@ -3,13 +3,17 @@ from models.model_stages import CPNet
 import paddleseg.transforms as T
 from paddleseg.datasets import ADE20K
 from paddle.optimizer.lr import PolynomialDecay
-from paddleseg.models.losses import CrossEntropyLoss, OhemCrossEntropyLoss, BootstrappedCrossEntropyLoss
+from paddleseg.models.losses import CrossEntropyLoss
 from loss.affinityloss import AffinityLoss
 from tool.train import train
 
+# backbone resnet预训练文件路径
 backbonepath = None
 print(backbonepath)
+# 模型导入
 model = CPNet(proir_size=60, am_kernel_size=11, groups=1, prior_channels=256, pretrained=backbonepath)
+
+# 构建训练用的transforms
 transform = [
     T.ResizeStepScaling(0.5, 2.0, 0.25),
     T.RandomHorizontalFlip(),
@@ -19,29 +23,34 @@ transform = [
                     saturation_range=0.5),
     T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
 ]
+
+# 构建训练集
 train_dataset = ADE20K(
     dataset_root='/home/aistudio/data/data54455/ADEChallengeData2016',
     transforms=transform,
     mode='train'
 )
 print(len(train_dataset))
+
+# 构建验证用的transforms
 transform_val = [
     T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
 ]
 
+# 构建验证集
 val_dataset = ADE20K(
     dataset_root='/home/aistudio/data/data54455/ADEChallengeData2016',
     transforms=transform_val,
     mode='val'
 )
 
+# 设置学习率
 base_lr = 0.02
 
 lr = PolynomialDecay(
     learning_rate=base_lr,
-    decay_steps=170000,
+    decay_steps=80000,
     power=0.9,
-    end_lr=0.000001
 )
 
 optimizer = paddle.optimizer.Momentum(lr,
@@ -65,12 +74,13 @@ train(
     aug_eval=True,
     optimizer=optimizer,
     save_dir='output',
-    iters=220000,
+    iters=80000,
     batch_size=10,
-    resume_model='/home/aistudio/work/openContext/output/iter_129600',
+    # resume_model='/home/aistudio/work/openContext/output/iter_129600', # checkpoint 文件
+    resume_model=None,
     save_interval=400,
     log_iters=10,
-    num_workers=0,
+    num_workers=0,  # 多线程
     losses=losses,
     use_vdl=True,
 )
