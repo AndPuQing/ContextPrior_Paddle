@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author  : PuQing
 # @Time    : 2021-09-05 12:04
-# @File : eva.py
+# @File : eval.py
 import paddle
 from paddleseg.core import evaluate
 from models.model_stages import CPNet
