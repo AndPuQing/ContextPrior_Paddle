@@ -18,9 +18,31 @@ from collections import deque
 import shutil
 
 import paddle
-import paddle.nn.functional as F
-from paddleseg.utils import TimeAverager, calculate_eta, resume, logger, worker_init_fn
+from paddleseg.utils import TimeAverager, calculate_eta, logger, worker_init_fn, load_pretrained_model
 from paddleseg.core.val import evaluate
+
+
+def resume(model, optimizer, resume_model):
+    if resume_model is not None:
+        logger.info('Resume model from {}'.format(resume_model))
+        if os.path.exists(resume_model):
+            resume_model = os.path.normpath(resume_model)
+            ckpt_path = os.path.join(resume_model, 'model.pdparams')
+            para_state_dict = paddle.load(ckpt_path)
+            ckpt_path = os.path.join(resume_model, 'model.pdopt')
+            opti_state_dict = paddle.load(ckpt_path)
+            model.set_state_dict(para_state_dict)
+            optimizer.set_state_dict(opti_state_dict)
+            
+            iter = resume_model.split('_')[-1]
+            iter = int(iter)
+            return iter
+        else:
+            raise ValueError(
+                'Directory of the model needed to resume is not Found: {}'.
+                    format(resume_model))
+    else:
+        logger.info('No model needed to resume.')
 
 
 def check_logits_losses(logits_list, losses):
@@ -254,9 +276,9 @@ def train(model,
                 mean_iou, acc, _, _, _ = evaluate(
                     model,
                     val_dataset,
-                    aug_eval=aug_eval,
-                    flip_horizontal=val_flip_horizontal,
-                    scales=val_scales,
+                    aug_eval=False,
+                    flip_horizontal=True,
+                    scales=[1.0, 1.5],
                     num_workers=0,
                     **test_config)
                 
