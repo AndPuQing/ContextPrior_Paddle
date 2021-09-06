@@ -18,7 +18,7 @@ segmentation的复现。项目依赖于paddleseg工具，因此可以使用paddl
 | Model                | mIOU  |
 | -------------------- | ----- |
 | CPNet50(原论文mmseg) | 44.46 |
-| CPNet50              |       |
+| CPNet50              | 45.78  |
 
 ### 数据集
 
