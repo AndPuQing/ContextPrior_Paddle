@@ -15,7 +15,7 @@ segmentation的复现。项目依赖于paddleseg工具，因此可以使用paddl
 
 ### 二、复现精度及loss图
 
-![img.png](img.png)
+![img.png](Train_loss.png)
 
 | Model                | mIOU  |
 | -------------------- | ----- |
