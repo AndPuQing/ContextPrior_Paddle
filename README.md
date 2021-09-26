@@ -42,8 +42,6 @@
 
 > 该指标在ADE20K的测试集测试
 
-![img.png](Train_loss.png)
-
 | Model                | mIOU  |
 | -------------------- | ----- |
 | CPNet50(原论文mmseg) | 44.46 |
